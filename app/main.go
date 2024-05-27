@@ -31,6 +31,14 @@ func main() {
 
 		sha := os.Args[2]
 		git.CatFile(sha)
+	case "hash-object":
+		if len(os.Args) < 3 {
+			fmt.Println("usage: hash-object <file>")
+			os.Exit(1)
+		}
+
+		file := os.Args[2]
+		git.HashObject(file)
 	default:
 		fmt.Println("Unknown command")
 	}

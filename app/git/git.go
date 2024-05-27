@@ -1,11 +1,13 @@
 package git
 
 import (
+	"bytes"
 	"compress/zlib"
 	"crypto/sha1"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -48,9 +50,12 @@ func Init(name string) Git {
 	return Git{Name: name, Head: master}
 }
 
+func getPath(sha string) string {
+	return fmt.Sprintf(".git-clone/objects/%v/%v", sha[0:2], sha[2:])
+}
+
 func CatFile(sha string) {
-	path := fmt.Sprintf(".git/objects/%v/%v", sha[0:2], sha[2:])
-	file, err := os.Open(path)
+	file, err := os.Open(getPath(sha))
 	defer file.Close()
 
 	if err != nil {
@@ -72,6 +77,42 @@ func CatFile(sha string) {
 	}
 	parts := strings.Split(string(s), "\x00")
 	fmt.Print(parts[1])
+}
+
+func HashObject(fileName string) {
+	file, err := os.ReadFile(fileName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading file: %s\n", err)
+		os.Exit(1)
+	}
+	content := string(file)
+	contentAndHeader := fmt.Sprintf("blob %d\x00%s", len(file), content)
+	sha := (sha1.Sum([]byte(contentAndHeader)))
+	hash := fmt.Sprintf("%x", sha)
+	blobName := []rune(hash)
+	blobPath := ".git-clone/objects/"
+
+	// TODO: Think about this a bit
+	for i, v := range blobName {
+		blobPath += string(v)
+		if i == 1 {
+			blobPath += "/"
+		}
+	}
+
+	var buffer bytes.Buffer
+
+	z := zlib.NewWriter(&buffer)
+	z.Write([]byte(contentAndHeader))
+	z.Close()
+
+	os.MkdirAll(filepath.Dir(blobPath), os.ModePerm)
+
+	f, _ := os.Create(blobPath)
+	defer f.Close()
+
+	f.Write(buffer.Bytes())
+	fmt.Print(hash)
 }
 
 func (g *Git) Commit(message string) Commit {
