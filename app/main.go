@@ -22,12 +22,15 @@ func main() {
 		}
 
 		name := os.Args[2]
-		g, err := git.Init(name)
-		if err != nil {
+		git.Init(name)
+	case "cat-file":
+		if len(os.Args) < 3 {
+			fmt.Println("usage: cat-file <sha>")
 			os.Exit(1)
 		}
 
-		fmt.Println("Initialized git repository", g.Name)
+		sha := os.Args[2]
+		git.CatFile(sha)
 	default:
 		fmt.Println("Unknown command")
 	}
