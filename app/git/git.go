@@ -1,7 +1,12 @@
 package git
 
+import (
+	"fmt"
+	"os"
+)
+
 type Git struct {
-	name         string
+	Name         string
 	Head         Branch
 	lastCommitId int
 }
@@ -17,13 +22,36 @@ type Branch struct {
 	Commit *Commit
 }
 
-func NewGit(name string) Git {
+func Init(name string) (Git, error) {
 	master := Branch{
 		Name:   "master",
 		Commit: nil,
 	}
 
-	return Git{name: name, Head: master, lastCommitId: 0}
+	err := os.Mkdir(".git-clone", 0755)
+	if err != nil {
+		fmt.Println(err)
+		return Git{}, err
+	}
+
+	err = os.Mkdir(".git-clone/objects", 0755)
+	if err != nil {
+		fmt.Println(err)
+		return Git{}, err
+
+	}
+	err = os.Mkdir(".git-clone/refs", 0755)
+	if err != nil {
+		fmt.Println(err)
+		return Git{}, err
+	}
+	_, err = os.Create(".git-clone/HEAD")
+	if err != nil {
+		fmt.Println(err)
+		return Git{}, err
+	}
+
+	return Git{Name: name, Head: master, lastCommitId: 0}, nil
 }
 
 func (g *Git) Commit(message string) Commit {

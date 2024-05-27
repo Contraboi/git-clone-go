@@ -3,17 +3,32 @@ package main
 import (
 	"fmt"
 	"git-clone/app/git"
+	"os"
 )
 
 func main() {
-	g := git.NewGit("my-repo")
-	g.Commit("commit 1")
-	g.Commit("commit 2")
-	g.Commit("commit 3")
-	g.Commit("commit 4")
-	g.Commit("commit 6")
+	if len(os.Args) < 2 {
+		fmt.Println("Please provide a command")
+		os.Exit(1)
+	}
 
-	for _, cmt := range g.Log() {
-		fmt.Println("Commit ID:", cmt.Id, "Message:", cmt.Message)
+	command := os.Args[1]
+
+	switch command {
+	case "init":
+		if len(os.Args) < 3 {
+			fmt.Println("usage: init <name>")
+			os.Exit(1)
+		}
+
+		name := os.Args[2]
+		g, err := git.Init(name)
+		if err != nil {
+			os.Exit(1)
+		}
+
+		fmt.Println("Initialized git repository", g.Name)
+	default:
+		fmt.Println("Unknown command")
 	}
 }
