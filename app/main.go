@@ -39,6 +39,14 @@ func main() {
 
 		file := os.Args[2]
 		git.HashObject(file)
+	case "ls-tree":
+		if len(os.Args) < 3 {
+			fmt.Println("usage: ls-tree <sha>")
+			os.Exit(1)
+		}
+
+		sha := os.Args[2]
+		git.LsTree(sha)
 	default:
 		fmt.Println("Unknown command")
 	}

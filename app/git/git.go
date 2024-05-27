@@ -6,6 +6,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -113,6 +114,51 @@ func HashObject(fileName string) {
 
 	f.Write(buffer.Bytes())
 	fmt.Print(hash)
+}
+
+func LsTree(sha string) {
+	if len(sha) != 40 {
+		log.Fatalf("Invalid SHA-1 hash length: %s\n", sha)
+	}
+
+	fmt.Println(sha[:2], sha[2:])
+	file, err := os.Open(fmt.Sprintf(".git/objects/%s/%s", sha[:2], sha[2:]))
+	if err != nil {
+		log.Fatalf("Error opening file: %s\n", err)
+	}
+	defer file.Close()
+
+	zlibReader, err := zlib.NewReader(file)
+	if err != nil {
+		log.Fatalf("Error creating zlib reader: %s\n", err)
+	}
+	defer zlibReader.Close()
+
+	body, err := io.ReadAll(zlibReader)
+	if err != nil {
+		log.Fatalf("Error reading zlib reader: %s\n", err)
+	}
+	files := []string{}
+	body = bytes.SplitN(body, []byte("\x00"), 2)[1]
+
+	fmt.Println(string(body), " - ", sha)
+	// TODO: Parse the tree object
+	for _, line := range bytes.Split(body, []byte("\n")) {
+		if len(line) == 0 {
+			continue
+		}
+
+		parts := bytes.SplitN(line, []byte(" "), 2)
+		if string(parts[0]) == "tree" {
+			files = append(files, string(parts[1]))
+
+			LsTree(string(parts[1]))
+		}
+
+	}
+
+	fmt.Println(files)
+
 }
 
 func (g *Git) Commit(message string) Commit {
