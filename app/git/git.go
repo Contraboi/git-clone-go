@@ -1,18 +1,18 @@
 package git
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"os"
 )
 
 type Git struct {
-	Name         string
-	Head         Branch
-	lastCommitId int
+	Name string
+	Head Branch
 }
 
 type Commit struct {
-	Id      int
+	Id      []byte
 	Message string
 	Parent  *Commit
 }
@@ -28,40 +28,51 @@ func Init(name string) (Git, error) {
 		Commit: nil,
 	}
 
-	err := os.Mkdir(".git-clone", 0755)
+	dirName := ".git-clone"
+
+	err := os.Mkdir(dirName, 0755)
 	if err != nil {
 		fmt.Println(err)
 		return Git{}, err
 	}
 
-	err = os.Mkdir(".git-clone/objects", 0755)
+	err = os.Mkdir(dirName+"/objects", 0755)
 	if err != nil {
 		fmt.Println(err)
 		return Git{}, err
 
 	}
-	err = os.Mkdir(".git-clone/refs", 0755)
+	err = os.Mkdir(dirName+"/refs", 0755)
 	if err != nil {
 		fmt.Println(err)
 		return Git{}, err
 	}
-	_, err = os.Create(".git-clone/HEAD")
+	file, err := os.Create(dirName + "/HEAD")
+	if err != nil {
+		fmt.Println(err)
+		return Git{}, err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString("ref: refs/heads/master\n")
 	if err != nil {
 		fmt.Println(err)
 		return Git{}, err
 	}
 
-	return Git{Name: name, Head: master, lastCommitId: 0}, nil
+	return Git{Name: name, Head: master}, nil
 }
 
 func (g *Git) Commit(message string) Commit {
+	sha1 := sha1.New()
+	id := sha1.Sum([]byte(message))
+
 	cmt := Commit{
-		Id:      g.lastCommitId,
+		Id:      id,
 		Message: message,
 		Parent:  g.Head.Commit,
 	}
 
-	g.lastCommitId = g.lastCommitId + 1
 	g.Head.Commit = &cmt
 
 	return cmt
