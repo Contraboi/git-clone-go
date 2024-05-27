@@ -7,7 +7,13 @@ import (
 
 func main() {
 	g := git.NewGit("my-repo")
-	c1 := g.Commit("first commit")
+	g.Commit("commit 1")
+	g.Commit("commit 2")
+	g.Commit("commit 3")
+	g.Commit("commit 4")
+	g.Commit("commit 6")
 
-	fmt.Printf("Commit id: %d\n", c1.Id)
+	for _, cmt := range g.Log() {
+		fmt.Println("Commit ID:", cmt.Id, "Message:", cmt.Message)
+	}
 }
